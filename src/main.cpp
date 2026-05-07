@@ -2,25 +2,89 @@
 #include <iomanip>
 #include <limits>
 #include <string>
+#include <cstdlib>
+#ifdef _WIN32
+    #include <windows.h>
+    #include <io.h>
+#endif
+#ifndef _WIN32
+    #include <unistd.h>
+#endif
+#include <cstdio>
+#include <stdio.h>
 #include "core/Library.h"
 #include "utils/FileStorage.h"
 
-static const std::string DATA_DIR = "data";
+// Helper function to check if a directory exists
+static bool directoryExists(const std::string& path) {
+    #ifdef _WIN32
+        DWORD attribs = GetFileAttributesA(path.c_str());
+        return (attribs != INVALID_FILE_ATTRIBUTES && (attribs & FILE_ATTRIBUTE_DIRECTORY));
+    #else
+        return false;
+    #endif
+}
+
+// Helper function to get the data directory path
+static std::string getDataDir() {
+    // Try 1: "data" relative to current working directory
+    if (directoryExists("data")) {
+        return "data";
+    }
+    
+    // Try 2: "../data" (up one level - for bin/ subdirectory)
+    if (directoryExists("..\\data")) {
+        return "..\\data";
+    }
+    
+    // Try 3: Get from executable path
+    #ifdef _WIN32
+        char buffer[260];
+        if (GetModuleFileNameA(NULL, buffer, sizeof(buffer)) > 0) {
+            std::string exePath(buffer);
+            // Find the last backslash to get the bin directory
+            size_t binSlash = exePath.find_last_of("\\/");
+            if (binSlash != std::string::npos) {
+                // Go up one more level to project root
+                std::string binDir = exePath.substr(0, binSlash);
+                size_t projSlash = binDir.find_last_of("\\/");
+                if (projSlash != std::string::npos) {
+                    std::string projectRoot = binDir.substr(0, projSlash);
+                    std::string dataPath = projectRoot + "\\data";
+                    if (directoryExists(dataPath)) {
+                        return dataPath;
+                    }
+                }
+            }
+        }
+    #endif
+    
+    // Default fallback
+    return "data";
+}
+
+static const std::string DATA_DIR = getDataDir();
 
 static void clearInput() {
     std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
 }
 
 static int readInt(const std::string& prompt) {
     int value;
     while (true) {
-        std::cout << prompt;
+        std::cout << prompt << std::flush;
         if (std::cin >> value) {
             clearInput();
             return value;
         }
-        std::cout << "  [!] Podaj liczbę całkowitą.\n";
+        if (!std::cin) {
+            std::cin.clear();
+            clearInput();
+            // EOF reached - return 0
+            return 0;
+        }
+        std::cout << "  [!] Podaj liczbę całkowitą.\n" << std::flush;
         clearInput();
     }
 }
@@ -28,26 +92,45 @@ static int readInt(const std::string& prompt) {
 static double readDouble(const std::string& prompt) {
     double value;
     while (true) {
-        std::cout << prompt;
+        std::cout << prompt << std::flush;
         if (std::cin >> value) {
             clearInput();
             return value;
         }
-        std::cout << "  [!] Podaj liczbe.\n";
+        if (!std::cin) {
+            std::cin.clear();
+            clearInput();
+            return 0.0;
+        }
+        std::cout << "  [!] Podaj liczbe.\n" << std::flush;
         clearInput();
     }
 }
 
 static std::string readLine(const std::string& prompt) {
     std::string value;
-    std::cout << prompt;
+    std::cout << prompt << std::flush;
     std::getline(std::cin, value);
     return value;
 }
 
 static void pressEnterToContinue() {
-    std::cout << "\nNaciśnij Enter, aby kontynuować...";
-    std::cin.get();
+    // If stdin is a terminal, wait for Enter. When input is piped (non-interactive), skip.
+#if defined(_WIN32)
+    if (_isatty(0)) {
+        std::cout << "\nNaciśnij Enter, aby kontynuować...";
+        std::cin.get();
+    } else {
+        std::cout << "\n";
+    }
+#else
+    if (isatty(0)) {
+        std::cout << "\nNaciśnij Enter, aby kontynuować...";
+        std::cin.get();
+    } else {
+        std::cout << "\n";
+    }
+#endif
 }
 
 static void printSeparator() {
@@ -508,6 +591,11 @@ static void menuWczytaj(Library& lib) {
 // ──────────────────────────────────────────────────────────
 
 int main() {
+    // Włącz UTF-8 w konsoli Windows
+    #ifdef _WIN32
+        system("chcp 65001 > nul");
+    #endif
+
     Library library;
 
     // Auto-wczytaj dane przy starcie jeśli pliki istnieją

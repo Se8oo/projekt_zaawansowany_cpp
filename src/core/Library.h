@@ -1,7 +1,19 @@
 #pragma once
 #include <vector>
-#include <optional>
+#if defined(__has_include)
+#  if __has_include(<optional>)
+#    include <optional>
+#  elif __has_include(<experimental/optional>)
+#    include <experimental/optional>
+    namespace std { using experimental::optional; using experimental::nullopt; }
+#  else
+#    error "<optional> or <experimental/optional> is required"
+#  endif
+#else
+#  include <optional>
+#endif
 #include <map>
+#include <string>
 #include "../models/Author.h"
 #include "../models/Category.h"
 #include "../models/Item.h"

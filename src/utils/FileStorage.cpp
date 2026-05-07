@@ -1,5 +1,21 @@
 #include "FileStorage.h"
 #include <fstream>
+#include <sstream>
+
+#ifdef _WIN32
+    #define PATH_SEP "\\"
+#else
+    #define PATH_SEP "/"
+#endif
+
+static std::string joinPath(const std::string& dir, const std::string& file) {
+    if (dir.empty()) return file;
+    char last = dir.back();
+    if (last == '/' || last == '\\') {
+        return dir + file;
+    }
+    return dir + PATH_SEP + file;
+}
 
 bool FileStorage::saveAuthors(const Library& lib, const std::string& filename) {
     std::ofstream file(filename);
@@ -7,6 +23,7 @@ bool FileStorage::saveAuthors(const Library& lib, const std::string& filename) {
     for (const auto& author : lib.getAllAuthors()) {
         file << author.toCSV() << "\n";
     }
+    file.close();
     return true;
 }
 
@@ -16,6 +33,7 @@ bool FileStorage::saveCategories(const Library& lib, const std::string& filename
     for (const auto& category : lib.getAllCategories()) {
         file << category.toCSV() << "\n";
     }
+    file.close();
     return true;
 }
 
@@ -25,6 +43,7 @@ bool FileStorage::saveItems(const Library& lib, const std::string& filename) {
     for (const auto& item : lib.getAllItems()) {
         file << item.toCSV() << "\n";
     }
+    file.close();
     return true;
 }
 
@@ -69,16 +88,16 @@ bool FileStorage::loadItems(Library& lib, const std::string& filename) {
 
 bool FileStorage::saveAll(const Library& lib, const std::string& dataDir) {
     bool ok = true;
-    ok &= saveAuthors(lib, dataDir + "/authors.csv");
-    ok &= saveCategories(lib, dataDir + "/categories.csv");
-    ok &= saveItems(lib, dataDir + "/items.csv");
+    ok &= saveAuthors(lib, joinPath(dataDir, "authors.csv"));
+    ok &= saveCategories(lib, joinPath(dataDir, "categories.csv"));
+    ok &= saveItems(lib, joinPath(dataDir, "items.csv"));
     return ok;
 }
 
 bool FileStorage::loadAll(Library& lib, const std::string& dataDir) {
     bool ok = true;
-    ok &= loadAuthors(lib, dataDir + "/authors.csv");
-    ok &= loadCategories(lib, dataDir + "/categories.csv");
-    ok &= loadItems(lib, dataDir + "/items.csv");
+    ok &= loadAuthors(lib, joinPath(dataDir, "authors.csv"));
+    ok &= loadCategories(lib, joinPath(dataDir, "categories.csv"));
+    ok &= loadItems(lib, joinPath(dataDir, "items.csv"));
     return ok;
 }
