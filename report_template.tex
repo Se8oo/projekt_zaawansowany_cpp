@@ -1,0 +1,73 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{Raport postępu projektu\\System zarządzania domową biblioteką}
+\author{Imię i nazwisko}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Cel projektu}
+Celem projektu jest stworzenie konsolowej aplikacji w języku C++ do zarządzania domową biblioteką.
+Aplikacja ma wykorzystywać podejście obiektowe (OOP), umożliwiać pełny zakres operacji CRUD
+na danych oraz dostarczać podstawowe statystyki i trwałość danych w plikach CSV.
+
+\section{Aktualnie zaimplementowane funkcjonalności}
+\begin{itemize}[leftmargin=*]
+    \item Obsługa encji: autorzy, kategorie i pozycje biblioteczne.
+    \item Pełne CRUD dla autorów, kategorii i pozycji.
+    \item Wyszukiwanie pozycji po tytule, autorze lub kategorii.
+    \item Statystyki: liczba pozycji/autorów/kategorii, średnia ocen, zestawienia per kategoria.
+    \item Interfejs konsolowy z menu i podmenu do zarządzania danymi.
+\end{itemize}
+
+\section{Architektura i klasy (OOP)}
+Projekt ma strukturę warstwową:
+\begin{itemize}[leftmargin=*]
+    \item \texttt{src/models}: klasy modelu domenowego (\texttt{Author}, \texttt{Category}, \texttt{Item}).
+    \item \texttt{src/core}: logika biznesowa i operacje na kolekcjach (\texttt{Library}).
+    \item \texttt{src/utils}: obsługa zapisu/odczytu danych (\texttt{FileStorage}).
+    \item \texttt{src/main.cpp}: warstwa UI (interfejs tekstowy i nawigacja po menu).
+\end{itemize}
+Stosowane są podstawowe założenia OOP: enkapsulacja, podział odpowiedzialności i separacja warstw.
+
+\section{Trwałość danych (pliki CSV)}
+Dane aplikacji są utrwalane w katalogu \texttt{data/}:
+\begin{itemize}[leftmargin=*]
+    \item \texttt{authors.csv} -- autorzy,
+    \item \texttt{categories.csv} -- kategorie,
+    \item \texttt{items.csv} -- pozycje biblioteczne.
+\end{itemize}
+Aplikacja obsługuje automatyczne i ręczne wczytywanie/zapisywanie danych,
+dzięki czemu stan biblioteki jest zachowany pomiędzy uruchomieniami.
+
+\section{Instrukcja budowania i uruchamiania}
+\subsection*{Linux/macOS}
+\begin{verbatim}
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/HomeLibrary
+\end{verbatim}
+
+\subsection*{Windows}
+\begin{verbatim}
+cmake -B build
+cmake --build build --config Release
+build\Release\HomeLibrary.exe
+\end{verbatim}
+
+\section{Kolejne kroki}
+\begin{enumerate}[leftmargin=*]
+    \item Rozbudowa walidacji danych wejściowych i obsługi błędów użytkownika.
+    \item Dodanie testów jednostkowych kluczowych klas (modele, \texttt{Library}, \texttt{FileStorage}).
+    \item Dalsze uporządkowanie warstwy UI i poprawa ergonomii menu.
+    \item Ewentualna rozbudowa o funkcjonalności rozszerzone (np. GUI lub baza danych).
+\end{enumerate}
+
+\end{document}
