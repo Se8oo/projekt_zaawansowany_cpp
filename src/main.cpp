@@ -7,10 +7,6 @@
 
 static const std::string DATA_DIR = "data";
 
-// ──────────────────────────────────────────────────────────
-// Pomocnicze funkcje wejścia/wyjścia
-// ──────────────────────────────────────────────────────────
-
 static void clearInput() {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
