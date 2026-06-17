@@ -17,6 +17,20 @@ static std::string joinPath(const std::string& dir, const std::string& file) {
     return dir + PATH_SEP + file;
 }
 
+static bool fileHasContent(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    return file.is_open() && file.tellg() > 0;
+}
+
+static bool hasBrokenItemReferences(const Library& lib) {
+    for (const auto& item : lib.getAllItems()) {
+        if (!lib.getAuthor(item.getAuthorId()) || !lib.getCategory(item.getCategoryId())) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool FileStorage::saveAuthors(const Library& lib, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) return false;
@@ -87,17 +101,36 @@ bool FileStorage::loadItems(Library& lib, const std::string& filename) {
 }
 
 bool FileStorage::saveAll(const Library& lib, const std::string& dataDir) {
+    std::string authorsFile = joinPath(dataDir, "authors.csv");
+    std::string categoriesFile = joinPath(dataDir, "categories.csv");
+    std::string itemsFile = joinPath(dataDir, "items.csv");
+
+    bool emptyLibrary = lib.getAllAuthors().empty()
+                     && lib.getAllCategories().empty()
+                     && lib.getAllItems().empty();
+    bool existingData = fileHasContent(authorsFile)
+                     || fileHasContent(categoriesFile)
+                     || fileHasContent(itemsFile);
+
+    if ((emptyLibrary && existingData) || hasBrokenItemReferences(lib)) {
+        return false;
+    }
+
     bool ok = true;
-    ok &= saveAuthors(lib, joinPath(dataDir, "authors.csv"));
-    ok &= saveCategories(lib, joinPath(dataDir, "categories.csv"));
-    ok &= saveItems(lib, joinPath(dataDir, "items.csv"));
+    ok &= saveAuthors(lib, authorsFile);
+    ok &= saveCategories(lib, categoriesFile);
+    ok &= saveItems(lib, itemsFile);
     return ok;
 }
 
 bool FileStorage::loadAll(Library& lib, const std::string& dataDir) {
+    Library loaded;
     bool ok = true;
-    ok &= loadAuthors(lib, joinPath(dataDir, "authors.csv"));
-    ok &= loadCategories(lib, joinPath(dataDir, "categories.csv"));
-    ok &= loadItems(lib, joinPath(dataDir, "items.csv"));
+    ok &= loadAuthors(loaded, joinPath(dataDir, "authors.csv"));
+    ok &= loadCategories(loaded, joinPath(dataDir, "categories.csv"));
+    ok &= loadItems(loaded, joinPath(dataDir, "items.csv"));
+    if (ok) {
+        lib = loaded;
+    }
     return ok;
 }

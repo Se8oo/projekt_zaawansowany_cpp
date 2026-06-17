@@ -17,51 +17,71 @@
 #include "core/Library.h"
 #include "utils/FileStorage.h"
 
-// Helper function to check if a directory exists
+static bool pathExists(const std::string& path) {
+    #ifdef _WIN32
+        return GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES;
+    #else
+        return access(path.c_str(), F_OK) == 0;
+    #endif
+}
+
 static bool directoryExists(const std::string& path) {
     #ifdef _WIN32
         DWORD attribs = GetFileAttributesA(path.c_str());
         return (attribs != INVALID_FILE_ATTRIBUTES && (attribs & FILE_ATTRIBUTE_DIRECTORY));
     #else
-        return false;
+        return pathExists(path);
     #endif
 }
 
-// Helper function to get the data directory path
+static std::string joinPath(const std::string& dir, const std::string& file) {
+    if (dir.empty()) return file;
+    char last = dir.back();
+    if (last == '/' || last == '\\') return dir + file;
+    #ifdef _WIN32
+        return dir + "\\" + file;
+    #else
+        return dir + "/" + file;
+    #endif
+}
+
+static std::string parentDirectory(const std::string& path) {
+    size_t slash = path.find_last_of("\\/");
+    if (slash == std::string::npos) return "";
+    return path.substr(0, slash);
+}
+
+static bool hasDataFiles(const std::string& dir) {
+    return directoryExists(dir)
+        && pathExists(joinPath(dir, "authors.csv"))
+        && pathExists(joinPath(dir, "categories.csv"))
+        && pathExists(joinPath(dir, "items.csv"));
+}
+
 static std::string getDataDir() {
-    // Try 1: "data" relative to current working directory
-    if (directoryExists("data")) {
-        return "data";
-    }
-    
-    // Try 2: "../data" (up one level - for bin/ subdirectory)
-    if (directoryExists("..\\data")) {
-        return "..\\data";
-    }
-    
-    // Try 3: Get from executable path
+    std::vector<std::string> candidates = {
+        "data",
+        joinPath("..", "data"),
+        joinPath(joinPath("..", ".."), "data")
+    };
+
     #ifdef _WIN32
         char buffer[260];
         if (GetModuleFileNameA(NULL, buffer, sizeof(buffer)) > 0) {
-            std::string exePath(buffer);
-            // Find the last backslash to get the bin directory
-            size_t binSlash = exePath.find_last_of("\\/");
-            if (binSlash != std::string::npos) {
-                // Go up one more level to project root
-                std::string binDir = exePath.substr(0, binSlash);
-                size_t projSlash = binDir.find_last_of("\\/");
-                if (projSlash != std::string::npos) {
-                    std::string projectRoot = binDir.substr(0, projSlash);
-                    std::string dataPath = projectRoot + "\\data";
-                    if (directoryExists(dataPath)) {
-                        return dataPath;
-                    }
-                }
+            std::string dir = parentDirectory(buffer);
+            for (int i = 0; i < 4 && !dir.empty(); ++i) {
+                candidates.push_back(joinPath(dir, "data"));
+                dir = parentDirectory(dir);
             }
         }
     #endif
-    
-    // Default fallback
+
+    for (const auto& candidate : candidates) {
+        if (hasDataFiles(candidate)) return candidate;
+    }
+    for (const auto& candidate : candidates) {
+        if (directoryExists(candidate)) return candidate;
+    }
     return "data";
 }
 
@@ -627,13 +647,13 @@ static void submenuStatystyki(const Library& lib) {
     printSeparator();
 
     const auto& items = lib.getAllItems();
-    std::cout << "  Liczba pozycji ogółem:   " << items.size() << "\n";
-    std::cout << "  Liczba autorów:          " << lib.getAllAuthors().size() << "\n";
+    std::cout << "  Liczba pozycji ogolem:   " << items.size() << "\n";
+    std::cout << "  Liczba autorow:          " << lib.getAllAuthors().size() << "\n";
     std::cout << "  Liczba kategorii:        " << lib.getAllCategories().size() << "\n";
 
     if (!items.empty()) {
         std::cout << std::fixed << std::setprecision(2);
-        std::cout << "  Średnia ocena ogólna:    " << lib.getAverageRating() << "/10\n";
+        std::cout << "  Srednia ocena ogolna:    " << lib.getAverageRating() << "/10\n";
     }
 
     printSeparator();
@@ -698,7 +718,7 @@ int main() {
     int choice;
     do {
         std::cout << "\n============================================\n";
-        std::cout << "  SYSTEM ZARZADZĄNIA DOMOWĄ BIBLIOTEKĄ\n";
+        std::cout << "  SYSTEM ZARZADZANIA DOMOWA BIBLIOTEKA\n";
         std::cout << "============================================\n";
         std::cout << "  1. Zarządzanie autorami\n";
         std::cout << "  2. Zarządzanie kategoriami\n";
