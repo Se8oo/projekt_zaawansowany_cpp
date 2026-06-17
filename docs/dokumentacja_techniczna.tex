@@ -1,0 +1,346 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\geometry{margin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\emergencystretch=2em
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    keywordstyle=\color{blue!60!black},
+    commentstyle=\color{gray!70!black}
+}
+
+\title{Dokumentacja techniczna projektu\\System zarządzania domową biblioteką}
+\author{Sebastian Święs}
+\date{czerwiec 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Cel i zakres projektu}
+
+Projekt jest konsolową aplikacją w języku C++, która służy do zarządzania domową
+biblioteką. Program pozwala przechowywać informacje o autorach, kategoriach oraz
+pozycjach bibliotecznych, na przykład książkach. Użytkownik może dodawać, edytować,
+usuwać i przeglądać dane, a także wyszukiwać pozycje i sprawdzać proste statystyki.
+
+Aplikacja nie korzysta z bazy danych ani interfejsu graficznego. Dane są zapisywane
+w plikach CSV w katalogu \texttt{data}. Dzięki temu projekt pozostaje prosty, a
+format danych można łatwo podejrzeć w zwykłym edytorze tekstu.
+
+Dokumentacja opisuje strukturę katalogów, najważniejsze klasy, sposób przechowywania
+danych, scenariusze działania programu oraz sposób budowania i uruchamiania projektu.
+
+\section{Technologie}
+
+\begin{longtable}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Technologia} & \textbf{Zastosowanie} \\
+\hline
+C++17 & Implementacja modeli danych, logiki biblioteki oraz menu konsolowego. \\
+\hline
+STL & Wykorzystanie kontenerów, czyli gotowych struktur danych z biblioteki standardowej, na przykład \texttt{std::vector} i \texttt{std::map}. \\
+\hline
+CMake & Konfiguracja budowania projektu i tworzenie pliku wykonywalnego \texttt{HomeLibrary}. \\
+\hline
+CSV & Prosty zapis danych autorów, kategorii i pozycji bibliotecznych. \\
+\hline
+PowerShell & Pomocniczy skrypt \texttt{run.ps1}, który ułatwia budowanie i uruchamianie aplikacji w VS Code. \\
+\hline
+\end{longtable}
+
+\section{Struktura katalogów}
+
+Najważniejsze elementy projektu są podzielone według odpowiedzialności:
+
+\begin{lstlisting}
+projekt_zaawansowany_cpp/
+|-- CMakeLists.txt
+|-- run.ps1
+|-- data/
+|   |-- authors.csv
+|   |-- categories.csv
+|   `-- items.csv
+`-- src/
+    |-- main.cpp
+    |-- models/
+    |   |-- Author.h / Author.cpp
+    |   |-- Category.h / Category.cpp
+    |   `-- Item.h / Item.cpp
+    |-- core/
+    |   `-- Library.h / Library.cpp
+    `-- utils/
+        `-- FileStorage.h / FileStorage.cpp
+\end{lstlisting}
+
+Katalog \texttt{models} zawiera klasy opisujące dane. Katalog \texttt{core} zawiera
+główną logikę aplikacji, a katalog \texttt{utils} odpowiada za zapis i odczyt plików.
+Plik \texttt{main.cpp} zawiera menu tekstowe oraz obsługę danych wpisywanych przez
+użytkownika.
+
+\section{Konfiguracja budowania}
+
+Projekt jest konfigurowany przez plik \texttt{CMakeLists.txt}. Wymagany jest standard
+C++17. Plik wykonywalny ma nazwę \texttt{HomeLibrary}. Do programu dołączane są
+wszystkie pliki źródłowe z katalogów \texttt{models}, \texttt{core} i \texttt{utils}.
+
+Przykładowe polecenia budowania:
+
+\begin{lstlisting}
+cmake -B build
+cmake --build build
+.\build\HomeLibrary.exe
+\end{lstlisting}
+
+W projekcie znajduje się też skrypt \texttt{run.ps1}. Jest przydatny szczególnie w
+VS Code, ponieważ próbuje użyć CMake, a jeśli to się nie uda, kompiluje projekt przez
+\texttt{g++}.
+
+\begin{lstlisting}
+powershell -ExecutionPolicy Bypass -File .\run.ps1
+\end{lstlisting}
+
+\section{Ogólna architektura}
+
+Program można podzielić na cztery warstwy:
+
+\begin{itemize}
+    \item warstwa interfejsu konsolowego w pliku \texttt{main.cpp},
+    \item warstwa logiki biblioteki w klasie \texttt{Library},
+    \item warstwa modeli danych: \texttt{Author}, \texttt{Category}, \texttt{Item},
+    \item warstwa zapisu i odczytu danych w klasie \texttt{FileStorage}.
+\end{itemize}
+
+Menu konsolowe pobiera dane od użytkownika i wywołuje metody klasy \texttt{Library}.
+Klasa \texttt{Library} przechowuje obiekty w pamięci programu i wykonuje operacje
+na listach. Klasa \texttt{FileStorage} zapisuje aktualny stan do plików CSV oraz
+wczytuje dane przy starcie programu.
+
+\section{Model danych}
+
+\subsection{Autor}
+
+Klasa \texttt{Author} przechowuje identyfikator, imię i nazwisko autora.
+Udostępnia metody dostępowe, metody zmiany pól oraz konwersję do formatu CSV.
+
+\begin{lstlisting}
+id;firstName;lastName
+\end{lstlisting}
+
+Przykład:
+
+\begin{lstlisting}
+3;Olga;Tokarczuk
+\end{lstlisting}
+
+\subsection{Kategoria}
+
+Klasa \texttt{Category} opisuje kategorię pozycji bibliotecznej. Każda kategoria
+ma identyfikator oraz nazwę.
+
+\begin{lstlisting}
+id;name
+\end{lstlisting}
+
+Przykład:
+
+\begin{lstlisting}
+2;Fantasy
+\end{lstlisting}
+
+\subsection{Pozycja biblioteczna}
+
+Klasa \texttt{Item} opisuje pojedynczą pozycję w bibliotece. Zawiera tytuł, odwołanie
+do autora i kategorii, ocenę, status oraz opcjonalny opis.
+
+\begin{lstlisting}
+id;title;authorId;categoryId;rating;status;description
+\end{lstlisting}
+
+Przykład:
+
+\begin{lstlisting}
+4;Solaris;5;3;9.300000;przeczytane;Klasyka polskiej fantastyki naukowej.
+\end{lstlisting}
+
+Relacja między pozycją, autorem i kategorią jest realizowana przez pola
+\texttt{authorId} oraz \texttt{categoryId}. Program nie używa mechanizmu kluczy
+obcych z bazy danych, ale podczas dodawania lub edycji pozycji sprawdza, czy wybrany
+autor i kategoria istnieją.
+
+\section{Klasa Library}
+
+Klasa \texttt{Library} jest głównym miejscem przechowywania danych w czasie działania
+programu. Wewnątrz ma trzy kolekcje:
+
+\begin{lstlisting}
+std::vector<Author> authors;
+std::vector<Category> categories;
+std::vector<Item> items;
+\end{lstlisting}
+
+Klasa udostępnia operacje CRUD dla autorów, kategorii i pozycji. Identyfikatory nowych
+rekordów są wyznaczane na podstawie największego aktualnego ID, powiększonego o jeden.
+Przykładowo metoda \texttt{getNextAuthorId()} przegląda listę autorów i zwraca kolejną
+wolną wartość.
+
+W klasie znajdują się też metody wyszukiwania:
+
+\begin{itemize}
+    \item wyszukiwanie pozycji po fragmencie tytułu,
+    \item pobieranie pozycji konkretnego autora,
+    \item pobieranie pozycji z wybranej kategorii,
+    \item filtrowanie pozycji po statusie.
+\end{itemize}
+
+Statystyki są liczone na podstawie aktualnej listy pozycji. Program wyznacza między
+innymi średnią ocenę wszystkich pozycji, liczbę pozycji w kategoriach oraz średnią ocenę
+dla konkretnej kategorii.
+
+\section{Obsługa plików CSV}
+
+Za zapis i odczyt danych odpowiada klasa \texttt{FileStorage}. Każdy typ danych ma
+oddzielny plik:
+
+\begin{longtable}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Plik} & \textbf{Zawartość} \\
+\hline
+\texttt{authors.csv} & Lista autorów. \\
+\hline
+\texttt{categories.csv} & Lista kategorii. \\
+\hline
+\texttt{items.csv} & Lista pozycji bibliotecznych. \\
+\hline
+\end{longtable}
+
+Przy uruchomieniu aplikacja próbuje wczytać dane z katalogu \texttt{data}. Przy wyjściu
+dane są automatycznie zapisywane. W menu dostępne są również ręczne opcje zapisu
+i wczytania.
+
+W obecnej wersji programu zapis został zabezpieczony przed prostą sytuacją, w której
+pusty stan programu mógłby nadpisać istniejące pliki danych. Jest to przydatne, gdy
+program zostanie uruchomiony z innego katalogu roboczego lub gdy nie uda się poprawnie
+wczytać danych.
+
+\section{Interfejs konsolowy}
+
+Interfejs użytkownika znajduje się w pliku \texttt{main.cpp}. Jest zbudowany z głównego
+menu oraz trzech podmenu:
+
+\begin{itemize}
+    \item zarządzanie autorami,
+    \item zarządzanie kategoriami,
+    \item zarządzanie pozycjami.
+\end{itemize}
+
+Dodatkowo w menu głównym znajdują się statystyki oraz ręczny zapis i odczyt danych.
+Program korzysta z prostych funkcji pomocniczych do wczytywania wartości liczbowych
+i tekstowych. Dzięki temu błędne dane wpisane przez użytkownika nie powinny kończyć
+programu, tylko powodować wyświetlenie komunikatu.
+
+Przykładowo ocena pozycji musi być liczbą z zakresu od 0 do 10, a wybór statusu jest
+ograniczony do trzech opcji:
+
+\begin{itemize}
+    \item \texttt{do przeczytania},
+    \item \texttt{w trakcie},
+    \item \texttt{przeczytane}.
+\end{itemize}
+
+\section{Główne scenariusze działania}
+
+\subsection{Start programu}
+
+\begin{enumerate}
+    \item Program ustawia obsługę znaków w konsoli Windows.
+    \item Tworzony jest obiekt klasy \texttt{Library}.
+    \item Aplikacja szuka katalogu \texttt{data}.
+    \item Dane z plików CSV są wczytywane do pamięci.
+    \item Wyświetlane jest menu główne.
+\end{enumerate}
+
+\subsection{Dodanie pozycji}
+
+\begin{enumerate}
+    \item Użytkownik wybiera opcję dodania pozycji.
+    \item Program sprawdza, czy istnieje przynajmniej jeden autor i jedna kategoria.
+    \item Użytkownik podaje tytuł, autora, kategorię, ocenę, status i opcjonalny opis.
+    \item Program waliduje wybrane ID autora i kategorii.
+    \item Nowy obiekt \texttt{Item} zostaje dodany do kolekcji w klasie \texttt{Library}.
+\end{enumerate}
+
+\subsection{Filtrowanie po statusie}
+
+\begin{enumerate}
+    \item Użytkownik wybiera opcję filtrowania po statusie.
+    \item Program wyświetla listę dostępnych statusów.
+    \item Klasa \texttt{Library} przechodzi po liście pozycji i wybiera te, których status
+    zgadza się z wybraną wartością.
+    \item Wyniki są wypisywane w konsoli razem z autorem, kategorią i oceną.
+\end{enumerate}
+
+\subsection{Zakończenie programu}
+
+\begin{enumerate}
+    \item Użytkownik wybiera opcję wyjścia.
+    \item Program zapisuje dane do plików CSV.
+    \item Po udanym zapisie wyświetlany jest komunikat końcowy.
+\end{enumerate}
+
+\section{Walidacja i obsługa błędów}
+
+Program zawiera podstawową walidację danych wpisywanych przez użytkownika. Funkcje
+\texttt{readIntInRange()} oraz \texttt{readDoubleInRange()} wymuszają zakres liczb.
+Funkcja \texttt{readRequiredLine()} pilnuje, aby wymagane pola tekstowe nie były puste.
+
+Przy edycji pozycji program sprawdza, czy wpisane ID autora lub kategorii jest poprawną
+liczbą oraz czy wskazany obiekt istnieje. Jeżeli dane są błędne, poprzednia wartość
+zostaje zachowana, a użytkownik dostaje komunikat.
+
+Wczytywanie z CSV jest również zabezpieczone przed prostymi błędami formatu. Jeżeli
+wiersz nie ma wymaganej liczby pól albo konwersja liczby się nie uda, tworzony jest
+pusty obiekt, który nie jest dodawany do biblioteki.
+
+\section{Ograniczenia projektu}
+
+Projekt jest celowo prosty i konsolowy. Najważniejsze ograniczenia to:
+
+\begin{itemize}
+    \item brak graficznego interfejsu użytkownika,
+    \item brak prawdziwej relacyjnej bazy danych,
+    \item prosty format CSV bez obsługi średników wewnątrz tekstu,
+    \item brak rozbudowanych testów automatycznych,
+    \item brak kont użytkowników i uprawnień.
+\end{itemize}
+
+Te ograniczenia wynikają głównie z zakresu projektu. Dla małej domowej biblioteki
+plikowy zapis CSV jest wystarczający i łatwy do zrozumienia.
+
+\section{Podsumowanie}
+
+System zarządzania domową biblioteką jest prostą aplikacją konsolową napisaną w C++17.
+Projekt pokazuje wykorzystanie klas, enkapsulacji, kontenerów STL, na przykład \texttt{std::vector}, podziału na moduły
+oraz zapisu danych do plików. Najważniejszą klasą logiki jest \texttt{Library}, a za
+trwałość danych odpowiada \texttt{FileStorage}. Program realizuje podstawowe operacje
+CRUD, wyszukiwanie, filtrowanie po statusie oraz statystyki, dzięki czemu spełnia
+założenia małej aplikacji do zarządzania prywatną kolekcją książek.
+
+\end{document}
