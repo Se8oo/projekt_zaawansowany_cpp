@@ -48,6 +48,7 @@ public:
     std::vector<Item> searchByTitle(const std::string& phrase) const;
     std::vector<Item> getItemsByAuthor(int authorId) const;
     std::vector<Item> getItemsByCategory(int categoryId) const;
+    std::vector<Item> getItemsByStatus(const std::string& status) const;
 
     // ---- Statystyki ----
     double getAverageRating() const;

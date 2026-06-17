@@ -1,7 +1,9 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
 #include <string>
+#include <vector>
 #include <cstdlib>
 #ifdef _WIN32
     #include <windows.h>
@@ -70,6 +72,26 @@ static void clearInput() {
     std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
 }
 
+static bool isBlank(const std::string& text) {
+    return text.find_first_not_of(" \t\r\n") == std::string::npos;
+}
+
+static bool tryParseInt(const std::string& text, int& value) {
+    std::stringstream ss(text);
+    ss >> value;
+    if (!ss) return false;
+    ss >> std::ws;
+    return ss.eof();
+}
+
+static bool tryParseDouble(const std::string& text, double& value) {
+    std::stringstream ss(text);
+    ss >> value;
+    if (!ss) return false;
+    ss >> std::ws;
+    return ss.eof();
+}
+
 static int readInt(const std::string& prompt) {
     int value;
     while (true) {
@@ -78,10 +100,7 @@ static int readInt(const std::string& prompt) {
             clearInput();
             return value;
         }
-        if (!std::cin) {
-            std::cin.clear();
-            clearInput();
-            // EOF reached - return 0
+        if (std::cin.eof()) {
             return 0;
         }
         std::cout << "  [!] Podaj liczbę całkowitą.\n" << std::flush;
@@ -97,13 +116,29 @@ static double readDouble(const std::string& prompt) {
             clearInput();
             return value;
         }
-        if (!std::cin) {
-            std::cin.clear();
-            clearInput();
+        if (std::cin.eof()) {
             return 0.0;
         }
         std::cout << "  [!] Podaj liczbe.\n" << std::flush;
         clearInput();
+    }
+}
+
+static int readIntInRange(const std::string& prompt, int minValue, int maxValue) {
+    while (true) {
+        int value = readInt(prompt);
+        if (std::cin.eof()) return minValue;
+        if (value >= minValue && value <= maxValue) return value;
+        std::cout << "  [!] Podaj wartość od " << minValue << " do " << maxValue << ".\n";
+    }
+}
+
+static double readDoubleInRange(const std::string& prompt, double minValue, double maxValue) {
+    while (true) {
+        double value = readDouble(prompt);
+        if (std::cin.eof()) return minValue;
+        if (value >= minValue && value <= maxValue) return value;
+        std::cout << "  [!] Podaj wartość od " << minValue << " do " << maxValue << ".\n";
     }
 }
 
@@ -112,6 +147,15 @@ static std::string readLine(const std::string& prompt) {
     std::cout << prompt << std::flush;
     std::getline(std::cin, value);
     return value;
+}
+
+static std::string readRequiredLine(const std::string& prompt) {
+    while (true) {
+        std::string value = readLine(prompt);
+        if (!isBlank(value)) return value;
+        if (std::cin.eof()) return "";
+        std::cout << "  [!] Pole nie może być puste.\n";
+    }
 }
 
 static void pressEnterToContinue() {
@@ -174,8 +218,12 @@ static void printItem(const Item& item, const Library& lib) {
 
 static void menuDodajAutora(Library& lib) {
     std::cout << "\n--- Dodaj autora ---\n";
-    std::string firstName = readLine("Imię: ");
-    std::string lastName  = readLine("Nazwisko: ");
+    std::string firstName = readRequiredLine("Imię: ");
+    std::string lastName  = readRequiredLine("Nazwisko: ");
+    if (isBlank(firstName) || isBlank(lastName)) {
+        std::cout << "  [!] Nie dodano autora - brak wymaganych danych.\n";
+        return;
+    }
     int newId = lib.getNextAuthorId();
     lib.addAuthor(Author(newId, firstName, lastName));
     std::cout << "  [+] Autor dodany (ID=" << newId << ").\n";
@@ -207,8 +255,8 @@ static void menuEdytujAutora(Library& lib) {
     std::cout << "  (Pozostaw puste, aby nie zmieniać)\n";
     std::string firstName = readLine("Nowe imię: ");
     std::string lastName  = readLine("Nowe nazwisko: ");
-    if (!firstName.empty()) a.setFirstName(firstName);
-    if (!lastName.empty())  a.setLastName(lastName);
+    if (!isBlank(firstName)) a.setFirstName(firstName);
+    if (!isBlank(lastName))  a.setLastName(lastName);
     lib.updateAuthor(a);
     std::cout << "  [OK] Autor zaktualizowany.\n";
 }
@@ -254,7 +302,11 @@ static void submenuAutorzy(Library& lib) {
 
 static void menuDodajKategorie(Library& lib) {
     std::cout << "\n--- Dodaj kategorię ---\n";
-    std::string name = readLine("Nazwa kategorii: ");
+    std::string name = readRequiredLine("Nazwa kategorii: ");
+    if (isBlank(name)) {
+        std::cout << "  [!] Nie dodano kategorii - nazwa jest wymagana.\n";
+        return;
+    }
     int newId = lib.getNextCategoryId();
     lib.addCategory(Category(newId, name));
     std::cout << "  [+] Kategoria dodana (ID=" << newId << ").\n";
@@ -284,7 +336,7 @@ static void menuEdytujKategorie(Library& lib) {
     Category c = *found;
     std::cout << "  Aktualna nazwa: " << c.getName() << "\n";
     std::string name = readLine("Nowa nazwa: ");
-    if (!name.empty()) c.setName(name);
+    if (!isBlank(name)) c.setName(name);
     lib.updateCategory(c);
     std::cout << "  [OK] Kategoria zaktualizowana.\n";
 }
@@ -333,7 +385,7 @@ static std::string chooseStatus() {
     std::cout << "    1. Do przeczytania\n";
     std::cout << "    2. W trakcie\n";
     std::cout << "    3. Przeczytane\n";
-    int s = readInt("  Wybor: ");
+    int s = readIntInRange("  Wybor: ", 1, 3);
     switch (s) {
         case 1: return "do przeczytania";
         case 2: return "w trakcie";
@@ -354,7 +406,11 @@ static void menuDodajPozycje(Library& lib) {
         return;
     }
 
-    std::string title = readLine("Tytuł: ");
+    std::string title = readRequiredLine("Tytuł: ");
+    if (isBlank(title)) {
+        std::cout << "  [!] Nie dodano pozycji - tytuł jest wymagany.\n";
+        return;
+    }
 
     menuWyswietlAutorow(lib);
     int authorId = readInt("ID autora: ");
@@ -370,9 +426,7 @@ static void menuDodajPozycje(Library& lib) {
         return;
     }
 
-    double rating = readDouble("Ocena (0-10): ");
-    if (rating < 0.0) rating = 0.0;
-    if (rating > 10.0) rating = 10.0;
+    double rating = readDoubleInRange("Ocena (0-10): ", 0.0, 10.0);
 
     std::string status = chooseStatus();
     std::string description = readLine("Opis (opcjonalnie): ");
@@ -411,30 +465,42 @@ static void menuEdytujPozycje(Library& lib) {
     std::cout << "  (Pozostaw puste, aby nie zmieniać)\n";
 
     std::string title = readLine("Nowy tytuł [" + item.getTitle() + "]: ");
-    if (!title.empty()) item.setTitle(title);
+    if (!isBlank(title)) item.setTitle(title);
 
     menuWyswietlAutorow(lib);
     std::string authorIdStr = readLine("Nowe ID autora [" + std::to_string(item.getAuthorId()) + "]: ");
-    if (!authorIdStr.empty()) {
-        int aId = std::stoi(authorIdStr);
-        if (lib.getAuthor(aId)) item.setAuthorId(aId);
-        else std::cout << "  [!] Autor nie istnieje, pozostawiono bez zmian.\n";
+    if (!isBlank(authorIdStr)) {
+        int aId;
+        if (!tryParseInt(authorIdStr, aId)) {
+            std::cout << "  [!] Niepoprawne ID autora, pozostawiono bez zmian.\n";
+        } else if (lib.getAuthor(aId)) {
+            item.setAuthorId(aId);
+        } else {
+            std::cout << "  [!] Autor nie istnieje, pozostawiono bez zmian.\n";
+        }
     }
 
     menuWyswietlKategorie(lib);
     std::string catIdStr = readLine("Nowe ID kategorii [" + std::to_string(item.getCategoryId()) + "]: ");
-    if (!catIdStr.empty()) {
-        int cId = std::stoi(catIdStr);
-        if (lib.getCategory(cId)) item.setCategoryId(cId);
-        else std::cout << "  [!] Kategoria nie istnieje, pozostawiono bez zmian.\n";
+    if (!isBlank(catIdStr)) {
+        int cId;
+        if (!tryParseInt(catIdStr, cId)) {
+            std::cout << "  [!] Niepoprawne ID kategorii, pozostawiono bez zmian.\n";
+        } else if (lib.getCategory(cId)) {
+            item.setCategoryId(cId);
+        } else {
+            std::cout << "  [!] Kategoria nie istnieje, pozostawiono bez zmian.\n";
+        }
     }
 
     std::string ratingStr = readLine("Nowa ocena [" + std::to_string(item.getRating()) + "]: ");
-    if (!ratingStr.empty()) {
-        double r = std::stod(ratingStr);
-        if (r < 0.0) r = 0.0;
-        if (r > 10.0) r = 10.0;
-        item.setRating(r);
+    if (!isBlank(ratingStr)) {
+        double r;
+        if (!tryParseDouble(ratingStr, r) || r < 0.0 || r > 10.0) {
+            std::cout << "  [!] Ocena musi być liczbą od 0 do 10, pozostawiono bez zmian.\n";
+        } else {
+            item.setRating(r);
+        }
     }
 
     std::cout << "  Zmień status? (t/n): ";
@@ -474,6 +540,10 @@ static void menuSzukajPozycji(const Library& lib) {
     std::vector<Item> results;
     if (choice == 1) {
         std::string phrase = readLine("Fraza w tytule: ");
+        if (isBlank(phrase)) {
+            std::cout << "  [!] Fraza nie może być pusta.\n";
+            return;
+        }
         results = lib.searchByTitle(phrase);
     } else if (choice == 2) {
         menuWyswietlAutorow(lib);
@@ -500,6 +570,28 @@ static void menuSzukajPozycji(const Library& lib) {
     }
 }
 
+static void menuFiltrujPoStatusie(const Library& lib) {
+    std::cout << "\n--- Filtruj po statusie ---\n";
+    if (lib.getAllItems().empty()) {
+        std::cout << "  Brak pozycji.\n";
+        return;
+    }
+
+    std::string status = chooseStatus();
+    std::vector<Item> results = lib.getItemsByStatus(status);
+    if (results.empty()) {
+        std::cout << "  Brak pozycji o statusie: " << status << ".\n";
+        return;
+    }
+
+    std::cout << "  Pozycje o statusie: " << status << "\n";
+    printSeparator();
+    for (const auto& item : results) {
+        printItem(item, lib);
+        printSeparator();
+    }
+}
+
 static void submenuPozycje(Library& lib) {
     int choice;
     do {
@@ -509,6 +601,7 @@ static void submenuPozycje(Library& lib) {
         std::cout << "  3. Edytuj pozycję\n";
         std::cout << "  4. Usuń pozycję\n";
         std::cout << "  5. Wyszukaj pozycję\n";
+        std::cout << "  6. Filtruj po statusie\n";
         std::cout << "  0. Powrót\n";
         choice = readInt("Wybór: ");
 
@@ -518,6 +611,7 @@ static void submenuPozycje(Library& lib) {
             case 3: menuEdytujPozycje(lib); pressEnterToContinue(); break;
             case 4: menuUsunPozycje(lib); pressEnterToContinue(); break;
             case 5: menuSzukajPozycji(lib); pressEnterToContinue(); break;
+            case 6: menuFiltrujPoStatusie(lib); pressEnterToContinue(); break;
             case 0: break;
             default: std::cout << "  [!] Nieznana opcja.\n"; break;
         }

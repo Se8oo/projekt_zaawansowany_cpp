@@ -168,6 +168,14 @@ std::vector<Item> Library::getItemsByCategory(int categoryId) const {
     return result;
 }
 
+std::vector<Item> Library::getItemsByStatus(const std::string& status) const {
+    std::vector<Item> result;
+    for (const auto& i : items) {
+        if (i.getStatus() == status) result.push_back(i);
+    }
+    return result;
+}
+
 // ---- Statystyki ----
 
 double Library::getAverageRating() const {
