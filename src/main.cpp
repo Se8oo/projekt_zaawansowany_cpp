@@ -697,9 +697,9 @@ int main() {
 
     int choice;
     do {
-        std::cout << "\n╔══════════════════════════════════════╗\n";
-        std::cout << "║  SYSTEM ZARZĄDZANIA DOMOWĄ BIBLIOTEKĄ  ║\n";
-        std::cout << "╚══════════════════════════════════════╝\n";
+        std::cout << "\n============================================\n";
+        std::cout << "  SYSTEM ZARZADZĄNIA DOMOWĄ BIBLIOTEKĄ\n";
+        std::cout << "============================================\n";
         std::cout << "  1. Zarządzanie autorami\n";
         std::cout << "  2. Zarządzanie kategoriami\n";
         std::cout << "  3. Zarządzanie pozycjami\n";
