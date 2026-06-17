@@ -27,11 +27,11 @@ bool Library::updateAuthor(const Author& updated) {
     return false;
 }
 
-std::optional<Author> Library::getAuthor(int id) const {
+compat::optional<Author> Library::getAuthor(int id) const {
     for (const auto& a : authors) {
         if (a.getId() == id) return a;
     }
-    return std::nullopt;
+    return {};
 }
 
 const std::vector<Author>& Library::getAllAuthors() const {
@@ -72,11 +72,11 @@ bool Library::updateCategory(const Category& updated) {
     return false;
 }
 
-std::optional<Category> Library::getCategory(int id) const {
+compat::optional<Category> Library::getCategory(int id) const {
     for (const auto& c : categories) {
         if (c.getId() == id) return c;
     }
-    return std::nullopt;
+    return {};
 }
 
 const std::vector<Category>& Library::getAllCategories() const {
@@ -117,11 +117,11 @@ bool Library::updateItem(const Item& updated) {
     return false;
 }
 
-std::optional<Item> Library::getItem(int id) const {
+compat::optional<Item> Library::getItem(int id) const {
     for (const auto& i : items) {
         if (i.getId() == id) return i;
     }
-    return std::nullopt;
+    return {};
 }
 
 const std::vector<Item>& Library::getAllItems() const {

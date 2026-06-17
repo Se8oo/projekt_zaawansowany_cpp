@@ -1,19 +1,32 @@
 #pragma once
+#include <map>
+#include <string>
 #include <vector>
+
 #if defined(__has_include)
 #  if __has_include(<optional>)
 #    include <optional>
+namespace compat {
+    template <typename T>
+    using optional = std::optional<T>;
+}
 #  elif __has_include(<experimental/optional>)
 #    include <experimental/optional>
-    namespace std { using experimental::optional; using experimental::nullopt; }
+namespace compat {
+    template <typename T>
+    using optional = std::experimental::optional<T>;
+}
 #  else
 #    error "<optional> or <experimental/optional> is required"
 #  endif
 #else
-#  include <optional>
+#  include <experimental/optional>
+namespace compat {
+    template <typename T>
+    using optional = std::experimental::optional<T>;
+}
 #endif
-#include <map>
-#include <string>
+
 #include "../models/Author.h"
 #include "../models/Category.h"
 #include "../models/Item.h"
@@ -24,7 +37,7 @@ public:
     void addAuthor(const Author& author);
     bool removeAuthor(int id);
     bool updateAuthor(const Author& author);
-    std::optional<Author> getAuthor(int id) const;
+    compat::optional<Author> getAuthor(int id) const;
     const std::vector<Author>& getAllAuthors() const;
     int getNextAuthorId() const;
 
@@ -32,7 +45,7 @@ public:
     void addCategory(const Category& category);
     bool removeCategory(int id);
     bool updateCategory(const Category& category);
-    std::optional<Category> getCategory(int id) const;
+    compat::optional<Category> getCategory(int id) const;
     const std::vector<Category>& getAllCategories() const;
     int getNextCategoryId() const;
 
@@ -40,7 +53,7 @@ public:
     void addItem(const Item& item);
     bool removeItem(int id);
     bool updateItem(const Item& item);
-    std::optional<Item> getItem(int id) const;
+    compat::optional<Item> getItem(int id) const;
     const std::vector<Item>& getAllItems() const;
     int getNextItemId() const;
 
